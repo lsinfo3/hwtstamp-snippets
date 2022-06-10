@@ -1,0 +1,15 @@
+# Shell commands to create a measurement csv:
+
+mkfifo /tmp/tap
+
+python read_delays.py -t hard_wrong 0</tmp/tap
+sudo tcpdump -i enp3s0f0 -Q in -l icmp --time-stamp-type adapter_unsynced --time-stamp-precision nano | awk '{print "tap1 " $0}; fflush(stdout)' > /tmp/tap
+sudo tcpdump -i enp5s0f0 -Q in -l icmp --time-stamp-type adapter_unsynced --time-stamp-precision nano | awk '{print "tap2 " $0}; fflush(stdout)' > /tmp/tap
+
+python read_delays.py -t hard 0</tmp/tap
+sudo tcpdump -i enp5s0f0 -Q in -l icmp --time-stamp-type adapter_unsynced --time-stamp-precision nano | awk '{print "tap1 " $0}; fflush(stdout)' > /tmp/tap
+sudo tcpdump -i enp5s0f1 -Q in -l icmp --time-stamp-type adapter_unsynced --time-stamp-precision nano | awk '{print "tap2 " $0}; fflush(stdout)' > /tmp/tap
+
+python read_delays.py -t soft 0</tmp/tap
+sudo tcpdump -i enp5s0f0 -Q in -l icmp --time-stamp-precision nano | awk '{print "tap1 " $0}; fflush(stdout)' > /tmp/tap
+sudo tcpdump -i enp5s0f1 -Q in -l icmp --time-stamp-precision nano | awk '{print "tap2 " $0}; fflush(stdout)' > /tmp/tap
