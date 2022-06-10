@@ -1,8 +1,15 @@
-# hwtstamp-snippets
-A collection of simple shell scripts and programs to run quick hardware time stamping delay measurements
+# Hardware Time Stamping Snippets
+This repository contains a collection of simple shell scripts and programs to run quick hardware time stamping delay measurements.
 
 # Publication
-For further information, please refer to our short publication *Affordable Measurement Setups for Networking Device Latency with Sub-Microsecond Accuracy*.
-It was published in the [WueWoWAS](https://lsinfo3.github.io/WueWoWas2022/) Workshop, a 'KuVS Fachgespräch' in Würzburg, July 2022.
+For some background and further information on hardware time stamping, please refer to our publication:
+
+> **Affordable Measurement Setups for Networking Device Latency with Sub-Microsecond Accuracy**
+>
+> Authors: *Alexej Grigorjew, Philip Diederich, Tobias Hoßfeld, Wolfgang Kellerer*
+>
+> Published at the *WueWoWAS’22 KuVS Fachgespräch - Würzburg Workshop on Next-Generation Communication Networks*
+
+Please cite this publication when you use some of our snippets. Thank you!
 
 **TODO: add direct link, when available**
