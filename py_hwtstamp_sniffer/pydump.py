@@ -91,12 +91,11 @@ def main(args):
         # add PROMISC flag and set flags back on the interface
         ifr_flags |= IFF_PROMISC
         ifr = struct.pack("16sh", args.int_b, ifr_flags)
-        fcntl.ioctl(s.fileno(), SIOCSIFFLAGS, ifr)
+        if x := fcntl.ioctl(s.fileno(), SIOCSIFFLAGS, ifr) != 0:
+            raise ValueError(f"fcntl.ioctl(SIOCSIFFLAGS) returned {x}")
 
-        # request nanosecond resolution
+        # request hardware timestamps and nanosecond resolution
         s.setsockopt(socket.SOL_SOCKET, SO_TIMESTAMPING, SOF_TIMESTAMPING_RX_HARDWARE | SOF_TIMESTAMPING_RAW_HARDWARE)
-
-        # request hardware timestamps
         conf = HWTSTAMP_CONFIG(0, HWTSTAMP_TX_OFF, HWTSTAMP_FILTER_ALL)
         ifr = HWTSTAMP_IFREQ(args.int_b, pointer(conf))
         if x := fcntl.ioctl(s.fileno(), SIOCSHWTSTAMP, ifr) != 0:
@@ -117,11 +116,12 @@ def main(args):
                 #if cmsg_level == socket.SOL_SOCKET and cmsg_type == SO_TIMESTAMPNS:
                 #    print(f"   {cmsg_level=}, {cmsg_type=}, {cmsg_data=}")
 
-            # unpack auxiliary stuff
-            #print(ancdata[0][2])
+            # do we even have a timestamp?
+            # (we encountered some TX frames with broadcast dst from recvmsg that did not have timestamps)
             if len(ancdata) > 0:
-                _, _, _, _, ts_sec, ts_nsec = struct.unpack("@QQQQQQ", ancdata[0][2])  # 2x unsigned long long
-                ts_human = datetime.fromtimestamp(ts_sec).strftime("%H:%M:%S") + "." + str(ts_nsec)  # %Y-%m-%d
+                # unpack auxiliary stuff
+                _, _, _, _, ts_sec, ts_nsec = struct.unpack("@QQQQQQ", ancdata[0][2])  # 6x unsigned long long
+                ts_human = datetime.fromtimestamp(ts_sec).strftime("%H:%M:%S") + "." + str(ts_nsec)
 
                 # unpack headers
                 eth_hdr = struct.unpack("!6s6s2s", raw_data[0:14])  # 6 dst MAC, 6 src MAC, 2 ethType
