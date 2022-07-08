@@ -24,6 +24,7 @@ SOF_TIMESTAMPING_RX_HARDWARE = (1<<2)
 SOF_TIMESTAMPING_RAW_HARDWARE = (1<<6)
 HWTSTAMP_TX_OFF = 0
 HWTSTAMP_TX_ON = 1  # /usr/include/linux/net_tstamp.h:111
+HWTSTAMP_FILTER_NONE = 0
 HWTSTAMP_FILTER_ALL = 1  # /usr/include/linux/net_tstamp.h:140
 
 
@@ -91,10 +92,11 @@ def main(args):
         # add PROMISC flag and set flags back on the interface
         ifr_flags |= IFF_PROMISC
         ifr = struct.pack("16sh", args.int_b, ifr_flags)
-        if x := fcntl.ioctl(s.fileno(), SIOCSIFFLAGS, ifr) != 0:
-            raise ValueError(f"fcntl.ioctl(SIOCSIFFLAGS) returned {x}")
+        if not fcntl.ioctl(s.fileno(), SIOCSIFFLAGS, ifr):
+            raise ValueError(f"fcntl.ioctl(SIOCSIFFLAGS) returned False")
 
         # request hardware timestamps and nanosecond resolution
+        #s.setsockopt(socket.SOL_SOCKET, SO_TIMESTAMPNS, 1)
         s.setsockopt(socket.SOL_SOCKET, SO_TIMESTAMPING, SOF_TIMESTAMPING_RX_HARDWARE | SOF_TIMESTAMPING_RAW_HARDWARE)
         conf = HWTSTAMP_CONFIG(0, HWTSTAMP_TX_OFF, HWTSTAMP_FILTER_ALL)
         ifr = HWTSTAMP_IFREQ(args.int_b, pointer(conf))
@@ -120,6 +122,7 @@ def main(args):
             # (we encountered some TX frames with broadcast dst from recvmsg that did not have timestamps)
             if len(ancdata) > 0:
                 # unpack auxiliary stuff
+                #ts_sec, ts_nsec = struct.unpack("@QQ", ancdata[0][2])  # 2x unsigned long long
                 _, _, _, _, ts_sec, ts_nsec = struct.unpack("@QQQQQQ", ancdata[0][2])  # 6x unsigned long long
                 ts_human = datetime.fromtimestamp(ts_sec).strftime("%H:%M:%S") + "." + str(ts_nsec)
 
@@ -130,13 +133,15 @@ def main(args):
                 #tcpHeader = raw_data[34:54]
                 #tcp_hdr = struct.unpack("!HH16s", tcpHeader)
 
-                print(f"{ts_human} \t {_mac(eth_hdr[1])} -> {_mac(eth_hdr[0])}, type={_hex(eth_hdr[2])}, hash={raw_data[14:]}", flush=True)
+                print(f"{ts_human} \t {_mac(eth_hdr[1])} -> {_mac(eth_hdr[0])}, type={_hex(eth_hdr[2])}, hash={raw_data[14:214]}", flush=True)
 
     except KeyboardInterrupt:
         print("Shutdown requested... exiting")
 
     except Exception as ex:
         traceback.print_exc()
+        if raw_data:
+            print(f"{raw_data=}")
 
     # remove flag
     if args.remove:
