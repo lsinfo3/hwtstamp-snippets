@@ -11,5 +11,3 @@ For some background and further information on hardware time stamping, please re
 > Published at the *WueWoWAS’22 KuVS Fachgespräch - Würzburg Workshop on Next-Generation Communication Networks*
 
 Please cite this publication when you use some of our snippets. Thank you!
-
-**TODO: add direct link, when available**
