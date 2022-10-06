@@ -9,6 +9,9 @@ parser.add_argument("-t", "--type",
 parser.add_argument("-f", "--file",
                     help="write all measured delays to a csv file; 'TYPE' is replaced by the given type; 'TIME' is replaced by a time stamp",
                     default=f"/tmp/ts_TYPE_TIME.csv")
+parser.add_argument("-o", "--offset",
+                    help="offset to add to the delay values before print/display (calibration)",
+                    type=int, default="0")
 args = parser.parse_args()
 
 tap1_map = {}
@@ -33,11 +36,11 @@ try:
             if rest in tap2_map:
                 time2 = tap2_map[rest]
                 del tap2_map[rest]
-                print("delay: %d ns,   packet: %s" % (time2 - time, " ".join(line.rstrip().split(" ")[1:])))
+                print(f"delay: {time2 - time + args.offset} ns,   packet: {' '.join(line.rstrip().split(' ')[1:])[:72]}")
 
                 if csvfile != None:
                     rep += 1
-                    csvfile.write(f"{rep};{args.type};{time2 - time};{time};{time2}\n")
+                    csvfile.write(f"{rep};{args.type};{time2 - time + args.offset};{time};{time2}\n")
             else:
                 tap1_map[rest] = time
                 
@@ -45,15 +48,18 @@ try:
             if rest in tap1_map:
                 time1 = tap1_map[rest]
                 del tap1_map[rest]
-                print("delay: %d ns,   packet: %s" % (time - time1, " ".join(line.rstrip().split(" ")[1:])))
+                print(f"delay: {time - time1 + args.offset} ns,   packet: {' '.join(line.rstrip().split(' ')[1:])[:72]}")
 
                 if csvfile != None:
                     rep += 1
-                    csvfile.write(f"{rep};{args.type};{time - time1};{time1};{time}\n")
+                    csvfile.write(f"{rep};{args.type};{time - time1 + args.offset};{time1};{time}\n")
             else:
                 tap2_map[rest] = time
 
 except Exception as e:
     if args.file != None:
         csvfile.close()
+    if line:
+        print("---")
+        print(f"ERROR {line=}")
     raise e
